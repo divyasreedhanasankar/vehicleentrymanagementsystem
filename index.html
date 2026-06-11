@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VEMS – Vehicle Entry Management System</title>
+  <meta name="description" content="Vehicle Entry Management System – Real-time checkpoint vehicle registration, OCR detection, and tracking.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+      </div>
+      <div>
+        <div class="sidebar-title">VEMS</div>
+        <div class="sidebar-subtitle">Vehicle Entry Console</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-item active" data-page="dashboard" id="nav-dashboard" onclick="navigateTo('dashboard'); return false;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Dashboard
+      </a>
+      <a href="#" class="nav-item" data-page="vehicle-entry" id="nav-vehicle-entry" onclick="navigateTo('vehicle-entry'); return false;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        Vehicle Entry
+      </a>
+      <a href="#" class="nav-item" data-page="search" id="nav-search" onclick="navigateTo('search'); return false;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Search
+      </a>
+      <a href="#" class="nav-item" data-page="history" id="nav-history" onclick="navigateTo('history'); return false;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        History
+      </a>
+      <a href="#" class="nav-item" data-page="drivers" id="nav-drivers" onclick="navigateTo('drivers'); return false;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Drivers
+      </a>
+      <a href="#" class="nav-item" data-page="reports" id="nav-reports" onclick="navigateTo('reports'); return false;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Reports
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <span class="firebase-status" id="firebase-status">
+        <span class="status-dot" id="status-dot"></span>
+        <span id="status-text">Connecting…</span>
+      </span>
+    </div>
+  </aside>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <main class="main-content" id="main-content">
+
+    <!-- Toast Notifications -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <!-- ===== DASHBOARD PAGE ===== -->
+    <section class="page active" id="page-dashboard">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Dashboard</h1>
+          <p class="page-subtitle">Real-time vehicle activity · <span id="dashboard-date"></span></p>
+        </div>
+        <button class="btn btn-primary" id="new-entry-btn" onclick="navigateTo('vehicle-entry')">+ New Entry</button>
+      </div>
+
+      <!-- Stats Row -->
+      <div class="stats-grid stats-grid-3">
+        <div class="stat-card border-blue" style="cursor:pointer" onclick="statCardAction('entries-today')" title="View today's entries">
+          <div class="stat-icon icon-blue">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="8 17 12 21 16 17"/><line x1="12" y1="3" x2="12" y2="21"/></svg>
+          </div>
+          <div class="stat-info">
+            <div class="stat-label">ENTRIES TODAY</div>
+            <div class="stat-value" id="stat-entries"><span class="dot-loader"></span></div>
+          </div>
+        </div>
+        <div class="stat-card border-green" style="cursor:pointer" onclick="statCardAction('inward-today')" title="View today's inward entries">
+          <div class="stat-icon icon-green">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          </div>
+          <div class="stat-info">
+            <div class="stat-label">INWARD TODAY</div>
+            <div class="stat-value" id="stat-inward"><span class="dot-loader"></span></div>
+          </div>
+        </div>
+        <div class="stat-card border-amber" style="cursor:pointer" onclick="statCardAction('outward-today')" title="View today's outward entries">
+          <div class="stat-icon icon-amber">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22l10-5-10-5-10 5 10 5z"/><path d="M2 12l10-5 10 5"/><path d="M2 7l10-5 10 5"/></svg>
+          </div>
+          <div class="stat-info">
+            <div class="stat-label">OUTWARD TODAY</div>
+            <div class="stat-value" id="stat-outward"><span class="dot-loader"></span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Enhanced Dashboard Stats Row -->
+      <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr); margin-top: 0.75rem; margin-bottom: 1.25rem;">
+        <div class="stat-card border-blue" style="cursor:pointer" onclick="statCardAction('frequent-visitors')" title="Total unique vehicles registered in the system">
+          <div class="stat-icon icon-blue">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div class="stat-info">
+            <div class="stat-label">TOTAL VEHICLES</div>
+            <div class="stat-value" id="stat-frequent-visitors"><span class="dot-loader"></span></div>
+          </div>
+        </div>
+        <div class="stat-card border-green" style="cursor:pointer" onclick="statCardAction('vehicles-inside')" title="Scroll to vehicles currently inside">
+          <div class="stat-icon icon-green">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </div>
+          <div class="stat-info">
+            <div class="stat-label">TOTAL PEOPLE INSIDE</div>
+            <div class="stat-value" id="stat-people-inside"><span class="dot-loader"></span></div>
+          </div>
+        </div>
+        <div class="stat-card border-amber" style="cursor:pointer" onclick="statCardAction('avg-stay')" title="View reports with stay duration">
+          <div class="stat-icon icon-amber">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div class="stat-info">
+            <div class="stat-label">AVERAGE STAY DURATION</div>
+            <div class="stat-value" id="stat-avg-stay"><span class="dot-loader"></span></div>
+          </div>
+        </div>
+        <div class="stat-card border-purple" style="cursor:pointer" onclick="statCardAction('most-visited')" title="Search most visited vehicle">
+          <div class="stat-icon icon-purple">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="12" y1="8" x2="12" y2="16"/></svg>
+          </div>
+          <div class="stat-info">
+            <div class="stat-label">MOST VISITED VEHICLE</div>
+            <div class="stat-value" id="stat-most-visited" style="font-size: 1.05rem; word-break: break-all; white-space: normal;"><span class="dot-loader"></span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Peak Traffic Analytics Row -->
+      <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); margin-top: 0.75rem; margin-bottom: 1.25rem;">
+        <div class="stat-card border-blue">
+          <div class="stat-icon icon-blue">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+          </div>
+          <div class="stat-info">
+            <div class="stat-label">BUSIEST DAY OF WEEK</div>
+            <div class="stat-value" id="stat-busiest-day"><span class="dot-loader"></span></div>
+          </div>
+        </div>
+        <div class="stat-card border-green">
+          <div class="stat-icon icon-green">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div class="stat-info">
+            <div class="stat-label">AVERAGE VEHICLES / DAY</div>
+            <div class="stat-value" id="stat-avg-vehicles-day"><span class="dot-loader"></span></div>
+          </div>
+        </div>
+        <div class="stat-card border-amber">
+          <div class="stat-icon icon-amber">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div class="stat-info">
+            <div class="stat-label">AVERAGE VEHICLES / HOUR</div>
+            <div class="stat-value" id="stat-avg-vehicles-hour"><span class="dot-loader"></span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Activity Cards -->
+      <div class="activity-grid">
+        <div class="card">
+          <div class="card-header">
+            <h3>Vehicles Currently Inside</h3>
+            <span class="badge badge-amber" id="inside-badge">0 active</span>
+          </div>
+          <div id="vehicles-inside-list"><div class="empty-state">No vehicles inside</div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>Recent Entries</h3></div>
+          <div id="recent-entries-list"><div class="empty-state">No activity yet</div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3>Recent Exits</h3></div>
+          <div id="recent-exits-list"><div class="empty-state">No activity yet</div></div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="quick-actions-grid">
+        <div class="quick-action-card qa-primary" onclick="navigateTo('vehicle-entry')">
+          <div class="qa-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg></div>
+          <div><div class="qa-title">Quick Entry</div><div class="qa-sub">Register a new vehicle</div></div>
+        </div>
+        <div class="quick-action-card" onclick="navigateTo('search')">
+          <div class="qa-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+          <div><div class="qa-title">Find Vehicle</div><div class="qa-sub">Search by number / driver</div></div>
+        </div>
+        <div class="quick-action-card" onclick="navigateTo('history')">
+          <div class="qa-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg></div>
+          <div><div class="qa-title">Visit History</div><div class="qa-sub">All visit records</div></div>
+        </div>
+        <div class="quick-action-card" onclick="navigateTo('reports')">
+          <div class="qa-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+          <div><div class="qa-title">Reports</div><div class="qa-sub">Export Excel / PDF</div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== VEHICLE ENTRY PAGE ===== -->
+    <section class="page" id="page-vehicle-entry">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">New Vehicle Entry</h1>
+          <p class="page-subtitle">Category: <strong id="entry-cat-label" class="text-accent">Inward</strong> · Enter or scan vehicle number to auto-fill from Firebase.</p>
+        </div>
+        <button class="btn btn-outline" id="reset-form-btn" onclick="resetEntryForm()">↺ Reset</button>
+      </div>
+
+      <!-- Category Tabs -->
+      <div class="category-tabs">
+        <button class="cat-tab active" data-cat="inward" onclick="setEntryCategory('inward')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          Inward
+        </button>
+        <button class="cat-tab" data-cat="outward" onclick="setEntryCategory('outward')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22l10-5-10-5-10 5 10 5z"/><path d="M2 12l10-5 10 5"/><path d="M2 7l10-5 10 5"/></svg>
+          Outward
+        </button>
+        <button class="cat-tab" data-cat="others" onclick="setEntryCategory('others')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Others
+        </button>
+      </div>
+
+      <div class="entry-layout">
+        <!-- Left: Form -->
+        <div class="entry-form-col">
+
+          <!-- Image Upload & OCR -->
+          <div class="form-section">
+            <h3 class="section-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+              Vehicle Image &amp; OCR Detection
+            </h3>
+            <div class="image-upload-area" id="image-upload-area">
+              <input type="file" id="vehicle-image-input" accept="image/*" style="display:none" onchange="handleImageUpload(event)">
+
+              <!-- Upload placeholder -->
+              <div class="upload-placeholder" id="upload-placeholder">
+                <div class="upload-drop-zone" onclick="document.getElementById('vehicle-image-input').click()" id="upload-drop-zone">
+                  <div class="upload-icon-wrap">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"/><line x1="12" y1="12" x2="12" y2="21"/><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"/></svg>
+                  </div>
+                  <p class="upload-text">Click or drag &amp; drop vehicle image</p>
+                  <p class="upload-hint">OCR will auto-detect the vehicle number plate</p>
+                  <button class="btn btn-outline btn-sm" type="button" onclick="event.stopPropagation(); document.getElementById('vehicle-image-input').click()">Browse File</button>
+                </div>
+              </div>
+
+              <!-- Image Preview -->
+              <div class="image-preview-wrap" id="image-preview-wrap" style="display:none">
+                <img id="vehicle-image-preview" src="" alt="Vehicle" class="vehicle-preview-img">
+                <div class="preview-overlay">
+                  <button class="btn btn-sm btn-outline" type="button" onclick="document.getElementById('vehicle-image-input').click()">Change Image</button>
+                  <button class="btn btn-sm btn-danger" type="button" onclick="clearVehicleImage()">Remove</button>
+                </div>
+                <!-- OCR Status -->
+                <div class="ocr-running" id="ocr-running" style="display:none">
+                  <div class="ocr-spinner"></div>
+                  <span>Running OCR on vehicle plate…</span>
+                </div>
+                <!-- OCR Result -->
+                <div class="ocr-result-banner" id="ocr-result-banner" style="display:none">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span>OCR detected: <strong id="ocr-detected-text"></strong></span>
+                  <span class="ocr-hint">(You can correct it in the field below)</span>
+                </div>
+                <!-- OCR Failed -->
+                <div class="ocr-fail-banner" id="ocr-fail-banner" style="display:none">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                  <span>Could not detect plate number. Please enter manually.</span>
+                </div>
+
+              </div>
+            </div>
+          </div>
+
+          <!-- Vehicle Number -->
+          <div class="form-section">
+            <h3 class="section-title">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+              Vehicle Number
+            </h3>
+            <div class="vnum-input-wrap">
+              <input type="text" id="vehicle-number" class="form-input vnum-input" placeholder="e.g. KA01AB1234" oninput="onVehicleNumberInput(this.value)" autocomplete="off" style="text-transform:uppercase">
+              <div class="vnum-status" id="vnum-searching" style="display:none">
+                <div class="spin"></div>
+              </div>
+              <div class="vnum-status vnum-found" id="vnum-found" style="display:none">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+            </div>
+
+            <div class="banner banner-info" id="banner-found" style="display:none">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+              <span>Existing vehicle found — details auto-filled below.</span>
+            </div>
+
+            <!-- Frequent Visitor Badge & Visit Counter Banner -->
+            <div class="banner" id="visit-counter-banner" style="display:none; flex-direction:column; align-items:flex-start; gap:0.5rem; background:rgba(0,210,216,0.08); border:1px solid rgba(0,210,216,0.2); color:var(--text); padding:0.8rem 1rem;">
+              <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+                <div id="badge-frequent-visitor" style="display:none; background:linear-gradient(135deg, var(--accent), var(--accent-dk)); color:#000; padding:0.2rem 0.6rem; border-radius:20px; font-size:0.72rem; font-weight:700;">Frequent Visitor</div>
+                <div id="badge-risk-score" style="display:none; padding:0.2rem 0.6rem; border-radius:20px; font-size:0.72rem; font-weight:700;">Risk Score: Low</div>
+              </div>
+              <div style="font-weight:600; font-size:0.85rem;" id="val-total-visits">Total Visits: 0</div>
+              <div style="color:var(--text-2); font-size:0.78rem;" id="val-last-visit">Last Visit: —</div>
+            </div>
+            <div class="banner banner-warn" id="banner-duplicate" style="display:none">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              ⚠ Vehicle Already Inside Premises — duplicate entry prevented.
+            </div>
+            <div class="banner banner-info" id="banner-exit-mode" style="display:none;background:rgba(20,184,166,0.1);border-color:rgba(20,184,166,0.3);color:#2dd4bf">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="stroke:#2dd4bf"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              Vehicle currently inside. Saving will record the vehicle's EXIT.
+            </div>
+          </div>
+
+          <!-- Purpose & Driver -->
+          <div class="form-section">
+            <h3 class="section-title">Purpose &amp; Driver</h3>
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label class="form-label" for="purpose">PURPOSE</label>
+                <select id="purpose" class="form-input form-select">
+                  <option value="">Select purpose…</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="driver-name">DRIVER / RIDER NAME</label>
+                <input type="text" id="driver-name" class="form-input" autocomplete="off">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="mobile-number">MOBILE NUMBER</label>
+                <input type="text" id="mobile-number" class="form-input" autocomplete="off">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="num-persons">NO. OF PERSONS</label>
+                <input type="number" id="num-persons" class="form-input" min="1">
+              </div>
+            </div>
+          </div>
+
+          <!-- Checkpoint -->
+          <div class="form-section">
+            <h3 class="section-title">Checkpoint</h3>
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label class="form-label" for="contact-person">CONTACT PERSON (CHECKPOINT)</label>
+                <input type="text" id="contact-person" class="form-input" autocomplete="off">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="shipment-method">SHIPMENT METHOD</label>
+                <input type="text" id="shipment-method" class="form-input" autocomplete="off">
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="remarks">REMARKS</label>
+              <textarea id="remarks" class="form-input form-textarea" rows="3"></textarea>
+            </div>
+          </div>
+
+          <!-- Documents -->
+          <div class="form-section">
+            <h3 class="section-title">Documents</h3>
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label class="form-label" for="dl-number">DRIVING LICENSE NO.</label>
+                <input type="text" id="dl-number" class="form-input" autocomplete="off">
+              </div>
+              <div class="form-group">
+                <label class="form-label" style="display:flex; justify-content:space-between; align-items:center;">
+                  DL EXPIRY DATE
+                  <span id="badge-dl-expiry" class="doc-status-badge" style="display:none; font-size:0.7rem; font-weight:700; padding:0.1rem 0.4rem; border-radius:4px;"></span>
+                </label>
+                <input type="date" id="dl-expiry" class="form-input">
+              </div>
+              <div class="form-group">
+                <label class="form-label">INSURANCE NO.</label>
+                <input type="text" id="insurance-number" class="form-input" autocomplete="off">
+              </div>
+              <div class="form-group">
+                <label class="form-label" style="display:flex; justify-content:space-between; align-items:center;">
+                  INSURANCE EXPIRY
+                  <span id="badge-insurance-expiry" class="doc-status-badge" style="display:none; font-size:0.7rem; font-weight:700; padding:0.1rem 0.4rem; border-radius:4px;"></span>
+                </label>
+                <input type="date" id="insurance-expiry" class="form-input">
+              </div>
+              <div class="form-group">
+                <label class="form-label">POLLUTION CERT. NO.</label>
+                <input type="text" id="pollution-number" class="form-input" autocomplete="off">
+              </div>
+              <div class="form-group">
+                <label class="form-label" style="display:flex; justify-content:space-between; align-items:center;">
+                  POLLUTION EXPIRY
+                  <span id="badge-pollution-expiry" class="doc-status-badge" style="display:none; font-size:0.7rem; font-weight:700; padding:0.1rem 0.4rem; border-radius:4px;"></span>
+                </label>
+                <input type="date" id="pollution-expiry" class="form-input">
+              </div>
+              <div class="form-group">
+                <label class="form-label">VEHICLE PERMIT NO.</label>
+                <input type="text" id="permit-number" class="form-input" autocomplete="off">
+              </div>
+              <div class="form-group">
+                <label class="form-label" style="display:flex; justify-content:space-between; align-items:center;">
+                  PERMIT EXPIRY
+                  <span id="badge-permit-expiry" class="doc-status-badge" style="display:none; font-size:0.7rem; font-weight:700; padding:0.1rem 0.4rem; border-radius:4px;"></span>
+                </label>
+                <input type="date" id="permit-expiry" class="form-input">
+              </div>
+              <div class="form-group">
+                <label class="form-label">REGISTRATION NO.</label>
+                <input type="text" id="reg-number" class="form-input" autocomplete="off">
+              </div>
+              <div class="form-group">
+                <label class="form-label" style="display:flex; justify-content:space-between; align-items:center;">
+                  REGISTRATION EXPIRY
+                  <span id="badge-reg-expiry" class="doc-status-badge" style="display:none; font-size:0.7rem; font-weight:700; padding:0.1rem 0.4rem; border-radius:4px;"></span>
+                </label>
+                <input type="date" id="reg-expiry" class="form-input">
+              </div>
+            </div>
+          </div>
+
+          <!-- Entry & Exit -->
+          <div class="form-section">
+            <h3 class="section-title">Entry &amp; Exit</h3>
+            <div class="form-grid-2">
+              <div class="form-group">
+                <label class="form-label" for="entry-date">ENTRY DATE</label>
+                <input type="date" id="entry-date" class="form-input">
+              </div>
+              <div class="form-group">
+                <label class="form-label" for="entry-time">ENTRY TIME</label>
+                <input type="time" id="entry-time" class="form-input">
+              </div>
+              <div class="form-group" id="exit-date-group" style="display:none">
+                <label class="form-label" for="exit-date">EXIT DATE</label>
+                <input type="date" id="exit-date" class="form-input">
+              </div>
+              <div class="form-group" id="exit-time-group" style="display:none">
+                <label class="form-label" for="exit-time">EXIT TIME</label>
+                <input type="time" id="exit-time" class="form-input">
+              </div>
+            </div>
+          </div>
+
+          <!-- Save Button -->
+          <div class="form-actions">
+            <button class="btn btn-primary btn-lg" id="save-entry-btn" onclick="saveEntry()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+              Save Entry
+            </button>
+          </div>
+
+        </div>
+
+        <!-- Right: Visit History Panel -->
+        <div class="entry-sidebar-col">
+          <div class="card sticky-top">
+            <div class="card-header">
+              <h3>Visit History</h3>
+              <span class="badge" id="visit-badge"></span>
+            </div>
+            <div id="visit-history-panel">
+              <div class="empty-state">No prior visits. Save this entry to start a record.</div>
+            </div>
+          </div>
+
+          <!-- Previous Vehicle Image -->
+          <div class="card" id="prev-image-card" style="display:none; margin-top:1rem">
+            <div class="card-header"><h3>Previous Vehicle Image</h3></div>
+            <div style="padding:0.75rem">
+              <img id="prev-vehicle-img" src="" alt="Vehicle" style="width:100%;border-radius:8px;object-fit:cover;max-height:180px">
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== SEARCH PAGE ===== -->
+    <section class="page" id="page-search">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Search Vehicles</h1>
+          <p class="page-subtitle">By vehicle number, driver, mobile, purpose or date range.</p>
+        </div>
+      </div>
+
+      <div class="card search-filter-card">
+        <div class="search-filters-row">
+          <div class="search-input-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="search-query" class="form-input search-text-input" placeholder="Search vehicle, driver, mobile…" oninput="debounceSearch()">
+          </div>
+          <select id="search-category" class="form-input form-select" onchange="performSearch()">
+            <option value="">All Categories</option>
+            <option value="inward">Inward</option>
+            <option value="outward">Outward</option>
+            <option value="others">Others</option>
+          </select>
+          <select id="search-purpose" class="form-input form-select" onchange="performSearch()">
+            <option value="">All Purposes</option>
+            <option value="Pickup">Pickup</option>
+            <option value="Delivery">Delivery</option>
+            <option value="Canteen">Canteen</option>
+            <option value="Others">Others</option>
+          </select>
+          <input type="date" id="search-date-from" class="form-input" onchange="performSearch()" placeholder="From">
+          <input type="date" id="search-date-to" class="form-input" onchange="performSearch()" placeholder="To">
+          <button class="btn btn-outline" onclick="clearSearch()">Clear</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3>Search Results</h3>
+          <span class="badge" id="search-count">0 results</span>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Vehicle</th>
+                <th>Purpose</th>
+                <th>Driver</th>
+                <th>Mobile</th>
+                <th>Entry</th>
+                <th>Exit</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="search-results-body">
+              <tr><td colspan="8" class="empty-cell">No results</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== HISTORY PAGE ===== -->
+    <section class="page" id="page-history">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Vehicle History</h1>
+          <p class="page-subtitle">All visit records, grouped by vehicle.</p>
+        </div>
+        <div class="header-actions">
+          <input type="text" id="history-filter" class="form-input" placeholder="Filter by vehicle number…" oninput="filterHistory(this.value)" style="width:220px">
+        </div>
+      </div>
+      <div id="history-container">
+        <div class="empty-state card-body" style="border-radius:12px;background:var(--surface)">No records yet.</div>
+      </div>
+    </section>
+
+    <!-- ===== REPORTS PAGE ===== -->
+    <section class="page" id="page-reports">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Reports</h1>
+          <p class="page-subtitle">Generate and export entry, exit and activity reports.</p>
+        </div>
+      </div>
+
+      <div class="card report-filter-card">
+        <div class="report-filters-row">
+          <select id="report-type" class="form-input form-select" onchange="generateReport()">
+            <option value="all">All Records</option>
+            <option value="entries">Entries Only</option>
+            <option value="exits">Exits Only</option>
+            <option value="Pickup">Pickup Report</option>
+            <option value="Delivery">Delivery Report</option>
+            <option value="Canteen">Canteen Report</option>
+          </select>
+          <input type="date" id="report-date-from" class="form-input" onchange="generateReport()">
+          <input type="date" id="report-date-to" class="form-input" onchange="generateReport()">
+          <button class="btn btn-success" id="excel-export-btn" onclick="exportExcel()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/></svg>
+            Excel
+          </button>
+          <button class="btn btn-danger" id="pdf-export-btn" onclick="exportPDF()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            PDF
+          </button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3>Report Data</h3>
+          <span class="badge" id="report-count">0 records</span>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table" id="report-table">
+            <thead>
+              <tr>
+                <th>Vehicle</th>
+                <th>Purpose</th>
+                <th>Driver</th>
+                <th>Mobile</th>
+                <th>Persons</th>
+                <th>Entry Date</th>
+                <th>Entry Time</th>
+                <th>Exit Date</th>
+                <th>Exit Time</th>
+                <th>Contact</th>
+                <th>Shipment</th>
+                <th>Remarks</th>
+                <th>DL No.</th>
+                <th>DL Expiry</th>
+                <th>Insurance No.</th>
+                <th>Insurance Expiry</th>
+                <th>Pollution No.</th>
+                <th>Pollution Expiry</th>
+                <th>Permit No.</th>
+                <th>Permit Expiry</th>
+                <th>Reg. No.</th>
+                <th>Reg. Expiry</th>
+              </tr>
+            </thead>
+            <tbody id="report-table-body">
+              <tr><td colspan="22" class="empty-cell">No data in range</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== DRIVERS PAGE ===== -->
+    <section class="page" id="page-drivers">
+      <div class="page-header">
+        <div>
+          <h1 class="page-title">Drivers Directory</h1>
+          <p class="page-subtitle">Search driver names, view visitation stats, and safety compliance risk profiles.</p>
+        </div>
+      </div>
+
+      <div class="card search-filter-card">
+        <div class="search-filters-row">
+          <div class="search-input-wrap" style="flex: 1; min-width: 280px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position: absolute; left: 0.75rem; top: 50%; transform: translateY(-50%); width: 16px; height: 16px; stroke: var(--text-3); pointer-events: none;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="driver-search-query" class="form-input" placeholder="Search driver name…" oninput="debounceDriverSearch()" style="padding-left: 2.25rem !important; width: 100%;">
+          </div>
+          <button class="btn btn-outline" onclick="clearDriverSearch()">Clear</button>
+        </div>
+      </div>
+
+      <div class="entry-layout">
+        <!-- Left: Drivers List -->
+        <div class="entry-form-col" style="flex: 1;">
+          <div class="card">
+            <div class="card-header">
+              <h3>Drivers List</h3>
+              <span class="badge" id="drivers-count">0 drivers</span>
+            </div>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Driver Name</th>
+                    <th>Mobile</th>
+                    <th>Visits Count</th>
+                    <th>Risk Score</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="drivers-list-body">
+                  <tr><td colspan="5" class="empty-cell">No drivers found</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Driver Details Panel -->
+        <div class="entry-sidebar-col" style="width: 380px;">
+          <div class="card sticky-top" id="driver-detail-card" style="display:none">
+            <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+              <h3 id="driver-detail-name">Driver Profile</h3>
+              <span class="badge badge-primary" id="driver-detail-visits"></span>
+            </div>
+            <div class="card-body" style="padding:1.25rem; display:flex; flex-direction:column; gap:1.25rem;">
+              <div>
+                <div style="font-size:0.75rem; color:var(--text-3); font-weight:600; text-transform:uppercase; margin-bottom:0.4rem;">Mobile Number</div>
+                <div id="driver-detail-mobile" style="font-weight:600; font-size:0.95rem; color:var(--text-2);"></div>
+              </div>
+              <div>
+                <div style="font-size:0.75rem; color:var(--text-3); font-weight:600; text-transform:uppercase; margin-bottom:0.4rem;">Vehicles Driven</div>
+                <div id="driver-detail-vehicles" style="display:flex; gap:0.4rem; flex-wrap:wrap; margin-top:0.25rem;"></div>
+              </div>
+              <div>
+                <div style="font-size:0.75rem; color:var(--text-3); font-weight:600; text-transform:uppercase; margin-bottom:0.4rem;">Risk Profile</div>
+                <div id="driver-detail-risk-badge" style="display:inline-block; padding:0.25rem 0.6rem; border-radius:6px; font-weight:700; font-size:0.85rem;"></div>
+                <div id="driver-detail-risk-factors" style="color:var(--text-2); font-size:0.78rem; margin-top:0.4rem; line-height:1.4;"></div>
+              </div>
+              <div>
+                <div style="font-size:0.75rem; color:var(--text-3); font-weight:600; text-transform:uppercase; margin-bottom:0.5rem;">Recent Visits</div>
+                <div id="driver-detail-visits-list" style="display:flex; flex-direction:column; gap:0.5rem; max-height:280px; overflow-y:auto; padding-right:0.25rem;"></div>
+              </div>
+            </div>
+          </div>
+          <div class="card sticky-top" id="driver-detail-empty" style="border-radius:12px;background:var(--surface); padding:2rem; text-align:center; color:var(--text-3);">
+            Select a driver from the list to view profile and safety details.
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===== EXIT MODAL ===== -->
+  <div class="modal-backdrop" id="exit-modal" style="display:none" onclick="closeExitModal()">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Record Vehicle Exit</h3>
+        <button class="modal-close" onclick="closeExitModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="margin-bottom:1rem">Vehicle: <strong id="exit-vehicle-label" style="color:var(--accent)"></strong></p>
+        <div class="form-grid-2">
+          <div class="form-group">
+            <label class="form-label">EXIT DATE</label>
+            <input type="date" id="modal-exit-date" class="form-input">
+          </div>
+          <div class="form-group">
+            <label class="form-label">EXIT TIME</label>
+            <input type="time" id="modal-exit-time" class="form-input">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeExitModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveExit()">Save Exit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SCRIPTS ===== -->
+  <!-- Firebase Compat SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+
+  <!-- OCR handled server-side via Plate Recognizer API -->
+
+  <!-- SheetJS for Excel export -->
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+
+  <!-- jsPDF for PDF export -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+
+  <!-- App modules -->
+  <script src="js/firebase-config.js"></script>
+  <script src="js/firebase-service.js"></script>
+  <script src="js/ocr-service.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/pages/dashboard.js"></script>
+  <script src="js/pages/vehicle-entry.js"></script>
+  <script src="js/pages/search.js"></script>
+  <script src="js/pages/history.js"></script>
+  <script src="js/pages/reports.js"></script>
+  <script src="js/pages/drivers.js"></script>
+  <script src="js/app.js"></script>
+
+</body>
+</html>
