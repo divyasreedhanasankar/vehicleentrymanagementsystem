@@ -2,7 +2,7 @@
 
 An AI-powered Vehicle Entry Management System designed to automate and secure vehicle access management in organizations, campuses, industries, and residential communities.
 
-🌐 **Live Demo:** https://vehicle-rouge.vercel.app/
+🌐 **Live Demo:** [https://vehicle-rouge.vercel.app/](https://vehicle-rouge-iota.vercel.app/)
 
 ---
 
